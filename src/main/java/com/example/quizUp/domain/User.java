@@ -22,17 +22,21 @@ public class User {
     @Column(name = "total_stars")
     private int totalStars = 0; // 기본값 0
 
-    // Tier와의 관계는 나중에 Tier 엔티티 만들고 연결하겠습니다.
-    // 우선은 회원가입/로그인 흐름부터 뚫기 위해 주석 처리하거나, 단순 ID만 저장해도 됩니다.
-    // @ManyToOne
-    // @JoinColumn(name = "tier_id")
-    // private Tier tier;
+    @Enumerated(EnumType.STRING)
+    private Tier tier;
+
+    // Tier 변경을 위한 편의 메서드
+    public void updateTier(Tier tier) {
+        this.tier = tier;
+    }
 
     @Builder
-    public User(String userId, String password, String username, int totalStars) {
+    public User(String userId, String password, String username, int totalStars, Tier tier) {
         this.userId = userId;
         this.password = password;
         this.username = username;
         this.totalStars = totalStars;
+        this.tier = (tier != null) ? tier : Tier.T1;
     }
+
 }
