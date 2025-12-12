@@ -1,5 +1,7 @@
 package com.example.quizUp.controller;
 
+import com.example.quizUp.dto.JwtTokenDto;
+import com.example.quizUp.dto.LoginRequestDto;
 import com.example.quizUp.dto.SignupRequestDto;
 import com.example.quizUp.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -21,4 +23,11 @@ public class AuthController {
         String result = authService.signup(requestDto);
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<JwtTokenDto> login(@RequestBody LoginRequestDto requestDto) {
+        JwtTokenDto tokenDto = authService.login(requestDto);
+        return ResponseEntity.ok(tokenDto);
+    }
+
 }
