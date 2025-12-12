@@ -2,12 +2,18 @@ package com.example.quizUp.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.Collections;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users") // DB 예약어 user와 겹칠 수 있어 users로 명명 추천
-public class User {
+public class User implements UserDetails {
 
     @Id
     @Column(name = "user_id", nullable = false, unique = true)
@@ -39,4 +45,36 @@ public class User {
         this.tier = (tier != null) ? tier : Tier.T1;
     }
 
+
+    // UserDetails 구현
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // 현재 시스템에서는 별도의 권한을 사용하지 않으므로, 기본 권한 "ROLE_USER"를 부여합니다.
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @Override
+    public String getUsername() {
+        return this.userId; // Spring Security에서는 username을 ID로 사용합니다.
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // 계정 만료 여부 (true: 만료되지 않음)
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // 계정 잠금 여부 (true: 잠기지 않음)
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // 비밀번호 만료 여부 (true: 만료되지 않음)
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // 계정 활성화 여부 (true: 활성화됨)
+    }
 }
