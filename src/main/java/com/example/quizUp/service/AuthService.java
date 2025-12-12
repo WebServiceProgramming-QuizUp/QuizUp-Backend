@@ -1,5 +1,6 @@
 package com.example.quizUp.service;
 
+import com.example.quizUp.domain.Tier;
 import com.example.quizUp.domain.User;
 import com.example.quizUp.dto.JwtTokenDto;
 import com.example.quizUp.dto.LoginRequestDto;
@@ -35,6 +36,7 @@ public class AuthService {
                 .password(encodedPassword)
                 .username(requestDto.getUsername())
                 .totalStars(0) // 초기값
+                .tier(Tier.T1)
                 .build();
 
         // 4. DB 저장
