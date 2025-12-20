@@ -45,13 +45,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
 
-            // "이 사람은 인증된 사용자입니다"라는 도장(Token)을 만듦
+            // "이 사람은 인증된 사용자입니다"라는 Token 생성
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities());
 
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            // 시큐리티 컨텍스트(저장소)에 등록 -> 이제 403 안 뜸!
+            // 시큐리티 컨텍스트(저장소)에 등록
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }
 

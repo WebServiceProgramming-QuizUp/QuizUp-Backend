@@ -30,7 +30,7 @@ public class AuthService {
         // 2. 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 3. 유저 객체 생성 (빌더 패턴 사용)
+        // 3. 유저 객체 생성 (빌더 패턴)
         User user = User.builder()
                 .userId(requestDto.getUserId())
                 .password(encodedPassword)

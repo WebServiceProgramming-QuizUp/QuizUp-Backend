@@ -17,7 +17,7 @@ public class JwtTokenProvider {
     private final Key key;
     private final long validityInMilliseconds = 3600000; // 1시간 (밀리초 단위)
 
-    // application.properties에서 jwt.secret 값을 가져옵니다.
+    // application.properties에서 jwt.secret 값을 가져와서 Key 객체 생성
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
@@ -32,7 +32,7 @@ public class JwtTokenProvider {
                 .setSubject(userId) // 토큰 제목에 ID 저장
                 .setIssuedAt(now) // 생성 시간
                 .setExpiration(validity) // 만료 시간
-                .signWith(key, SignatureAlgorithm.HS256) // 암호화 알고리즘
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
