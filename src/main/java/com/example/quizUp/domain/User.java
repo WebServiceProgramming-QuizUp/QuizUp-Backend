@@ -52,7 +52,7 @@ public class User implements UserDetails {
     // UserDetails 구현
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 현재 시스템에서는 별도의 권한을 사용하지 않으므로, 기본 권한 "ROLE_USER"를 부여합니다.
+        // 기본 권한 "ROLE_USER"를 부여.
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 

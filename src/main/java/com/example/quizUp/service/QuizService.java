@@ -14,30 +14,47 @@ import com.example.quizUp.repository.QuizRepository;
 import com.example.quizUp.repository.StageRepository;
 import com.example.quizUp.repository.UserHistoryRepository;
 import com.example.quizUp.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 public class QuizService {
     private final QuizRepository quizRepository;
     private final StageRepository stageRepository;
     private final UserHistoryRepository userHistoryRepository;
     private final UserRepository userRepository;
     private final UserService userService; // 유저 정보 갱신용
+    private final ObjectMapper objectMapper; // JSON 처리를 위한 ObjectMapper
+
+    // 생성자를 수동으로 작성하여 ObjectMapper를 직접 초기화
+    public QuizService(QuizRepository quizRepository,
+                       StageRepository stageRepository,
+                       UserHistoryRepository userHistoryRepository,
+                       UserRepository userRepository,
+                       UserService userService) {
+        this.quizRepository = quizRepository;
+        this.stageRepository = stageRepository;
+        this.userHistoryRepository = userHistoryRepository;
+        this.userRepository = userRepository;
+        this.userService = userService;
+        this.objectMapper = new ObjectMapper(); // 직접 생성
+    }
 
     // ** 퀴즈 풀이 시작 기능
     @Transactional(readOnly = true)
     public QuizStartResponseDto startQuiz(String stageId) {
 
         // 1. Stage 엔티티 조회 (timeLimit을 가져오기 위함)
-        // StageRepository를 사용하여 Stage ID로 조회합니다.
         Stage stage = stageRepository.findById(stageId)
                 .orElseThrow(() -> new RuntimeException("해당 스테이지를 찾을 수 없습니다.")); // 스테이지 없으면 예외 처리
 
@@ -48,7 +65,7 @@ public class QuizService {
             throw new RuntimeException("해당 스테이지의 퀴즈를 찾을 수 없습니다.");
         }
 
-        // 3. 응답 DTO를 생성하고 timeLimit 설정(Stage 엔티티에서 timeLimit 값을 가져온다.)
+        // 3. 응답 DTO를 생성하고 timeLimit 설정
         QuizStartResponseDto response = new QuizStartResponseDto();
         response.setTimeLimit(stage.getTimeLimit());
 
@@ -66,6 +83,7 @@ public class QuizService {
     // ** 답안 제출 및 채점 기능
     @Transactional
     public QuizSubmissionResponseDto scoreAndSave(QuizSubmissionRequestDto request) {
+
         // 1. 유저 정보 조회 (티어 정보 확인용)
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
@@ -87,7 +105,6 @@ public class QuizService {
                 correctCount++;
             }
 
-            // 각 문제의 결과를 DTO에 담아 리스트에 추가
             details.add(new QuizSubmissionResponseDto.QuizDetailDto(
                     input.getQuizId(),
                     input.getUserInput(),
@@ -100,47 +117,53 @@ public class QuizService {
         int newStars = calculateStars(correctCount);
         boolean isCleared = correctCount >= 5;
 
-        // 5. 기존 기록 조회 및 갱신 (특정 유저 특정 스테이지당 userHistory 1개만 유지)
+        // 5. 기존 기록 조회 및 갱신
         Optional<UserHistory> optionalHistory = userHistoryRepository
                 .findByUserIdAndStageId(request.getUserId(), request.getStageId());
 
-        int deltaStars = 0; // 증가할 별 개수(유저 정보 갱신 위해)
+        int deltaStars = 0;
         UserHistory history;
+        String submitLog;
+
+        try {
+            submitLog = objectMapper.writeValueAsString(request.getQuizInputs());
+        } catch (JsonProcessingException e) {
+            // JSON 변환 실패 시, 간단한 로그로 대체
+            submitLog = "Error converting to JSON";
+        }
 
         if (optionalHistory.isPresent()) {
             // [케이스 A] 기존 기록이 있는 경우: 업데이트 로직
             history = optionalHistory.get();
             int previousBest = history.getStars();
 
-            // 더 높은 별점을 획득했을 때만 증가분 계산
             if (newStars > previousBest) {
                 deltaStars = newStars - previousBest;
             }
 
-            // 엔티티 내부의 비즈니스 메서드로 값 갱신 (Dirty Checking 활용)
-            history.updateRecord(newStars, isCleared, request.getQuizInputs().toString(), user.getTier().name());
+            history.updateRecord(newStars, isCleared, submitLog, user.getTier().name());
         } else {
             // [케이스 B] 처음 푸는 경우: 신규 생성 로직
             deltaStars = newStars;
+            String historyId = UUID.randomUUID().toString(); // UUID로 고유 ID 생성
             history = UserHistory.builder()
+                    .historyId(historyId) // 생성한 ID 설정
                     .userId(request.getUserId())
                     .stageId(request.getStageId())
                     .tierId(user.getTier().name())
                     .stars(newStars)
                     .isCleared(isCleared)
-                    .submitLog(request.getQuizInputs().toString())
+                    .submitLog(submitLog) // JSON으로 변환된 로그 저장
                     .build();
 
             userHistoryRepository.save(history);
         }
 
-
-        // 6. 유저의 총 별 개수 및 티어 갱신 (증가분 deltaStars가 있을 때만!)
+        // 6. 유저의 총 별 개수 및 티어 갱신
         if (deltaStars > 0) {
             userService.increaseUserStars(user.getUserId(), deltaStars);
         }
 
-        // 최종 반환 시 상세 결과 리스트(details)를 함께 전달합니다.
         return new QuizSubmissionResponseDto(
                 history.getHistoryId(),
                 newStars,
@@ -148,17 +171,14 @@ public class QuizService {
                 correctCount,
                 details
         );
-
     }
 
-    // * 맞은 개수에 따라 별 계산
     private int calculateStars(int correctCount) {
         if (correctCount == 10) return 3;
-        if (10 > correctCount && correctCount >= 6) return 2;
+        if (correctCount >= 6) return 2;
         if (correctCount == 5) return 1;
         return 0;
     }
-
 
     // ** 퀴즈 풀이 중단 기능(back 버튼)
     @Transactional

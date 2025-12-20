@@ -8,6 +8,5 @@ import java.util.List;
 
 public interface QuizRepository extends JpaRepository<Quiz, String>{
     // 특정 Stage ID에 해당하는 모든 퀴즈 목록을 조회하는 메서드
-    // (JPA가 메서드 이름을 해석하여 SQL을 자동 생성합니다)
     List<Quiz> findByStageId(String stageId);
 }

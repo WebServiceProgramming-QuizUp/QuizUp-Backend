@@ -38,7 +38,8 @@ public class UserHistory {
     private String submitLog;
 
     @Builder
-    public UserHistory(String userId, String stageId, String tierId, int stars, boolean isCleared, String submitLog) {
+    public UserHistory(String historyId, String userId, String stageId, String tierId, int stars, boolean isCleared, String submitLog) {
+        this.historyId = historyId;
         this.userId = userId;
         this.stageId = stageId;
         this.tierId = tierId;
