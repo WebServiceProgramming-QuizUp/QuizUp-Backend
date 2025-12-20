@@ -45,6 +45,9 @@ public class User implements UserDetails {
         this.tier = (tier != null) ? tier : Tier.T1;
     }
 
+    public void addStars(int starsToAdd) {
+        this.totalStars += starsToAdd;
+    }
 
     // UserDetails 구현
     @Override
