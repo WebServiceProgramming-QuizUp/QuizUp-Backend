@@ -4,6 +4,7 @@ import com.example.quizUp.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,6 +35,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable) // 폼 로그인 비활성화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안함
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 메소드 요청은 모두 허용
                         .requestMatchers("/api/auth/**").permitAll() // 로그인, 회원가입 경로는 누구나 접속 가능
                         .anyRequest().authenticated() // 그 외는 인증 필요
                 )
